@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b3157">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="التقارير الطبية">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>تقارير الدائرة الطبية</title>
+<style>
+:root{--navy:#0b3157;--blue:#1b5e91;--bg:#eef3f8;--card:#fff;--line:#d7e0e9;--text:#172033;--muted:#667085;--danger:#b42318}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:960px;margin:auto;padding:12px 10px 40px}
+.hero{background:linear-gradient(135deg,#082a4a,#175d91);color:white;border-radius:22px;padding:20px;box-shadow:0 14px 36px #0b31572d}
+.hero h1{margin:0 0 7px;font-size:1.35rem}.hero p{margin:0;line-height:1.75;font-size:.9rem;opacity:.95}
+.badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.badge{font-size:.72rem;border:1px solid #ffffff46;padding:5px 9px;border-radius:999px;background:#ffffff10}
+.card{background:var(--card);border-radius:18px;padding:15px;margin-top:12px;box-shadow:0 6px 22px #18324a10}
+.card h2{margin:0 0 12px;color:var(--navy);font-size:1rem}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:9px}.type{border:1px solid #cddae6;background:#f9fbfd;border-radius:14px;padding:14px 10px;color:var(--navy);font-weight:800}.type.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.full{grid-column:1/-1}
+label{display:block;font-size:.8rem;font-weight:800;margin-bottom:6px;color:#344054}.opt{font-size:.68rem;color:#98a2b3;font-weight:400;margin-right:4px}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:#fbfdff;outline:none;color:#111827}
+input:focus,textarea:focus{border-color:#3978aa;box-shadow:0 0 0 3px #3978aa18;background:#fff}
+textarea{min-height:130px;resize:vertical;line-height:1.8}
+.sep{height:1px;background:#e8edf2;margin:15px 0}.hidden{display:none!important}
+.actions{display:grid;grid-template-columns:1.35fr 1.35fr .9fr;gap:9px;margin-top:15px}.primary,.whatsapp,.secondary{border-radius:12px;padding:13px 10px;font-weight:800}.primary{background:var(--navy);color:#fff;border:0}.whatsapp{background:#128c4a;color:#fff;border:0}.whatsapp:disabled,.primary:disabled{opacity:.65;cursor:wait}.secondary{background:#fff;color:var(--navy);border:1px solid #cbd7e2}
+.help{font-size:.76rem;color:var(--muted);line-height:1.7;margin:10px 2px 0}.status{font-size:.74rem;color:#067647;margin-top:7px;font-weight:700}
+.preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.preview-head h2{margin:0}.preview-head span{font-size:.7rem;color:var(--muted)}
+.preview-box{background:#cfd6df;border-radius:12px;padding:5px;overflow:auto}.preview-canvas{display:block;width:100%;height:auto;background:white;box-shadow:0 2px 12px #0002}
+.toast{position:fixed;z-index:20;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 14px;border-radius:12px;font-size:.8rem;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:650px){.app{padding:8px 7px 28px}.hero,.card{border-radius:15px}.grid,.types,.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="hero">
+  <h1>تقارير الدائرة الطبية</h1>
+  <p>توليد ملف PDF من داخل الموقع مباشرة، بمقاس A4 وصفحة واحدة دون طباعة المتصفح.</p>
+  <div class="badges"><span class="badge">كل الخانات اختيارية</span><span class="badge">صفحة PDF واحدة</span><span class="badge">يعمل دون إنترنت</span></div>
+</header>
+<section class="card">
+  <h2>نوع التقرير</h2>
+  <div class="types">
+    <button class="type active" id="patientBtn" type="button">تقرير مريض</button>
+    <button class="type" id="companionBtn" type="button">تقرير مرافق مريض</button>
+  </div>
+</section>
+<form class="card" id="reportForm">
+  <h2>بيانات رأس التقرير</h2>
+  <div class="grid">
+    <div><label>التاريخ <span class="opt">اختياري</span></label><input id="reportDate" placeholder="مثال: 22/7/2026"></div>
+    <div><label>اليوم <span class="opt">اختياري</span></label><input id="reportDay" placeholder="مثال: الأربعاء"></div>
+    <div class="full"><label>اسم قائد اللواء الرابع <span class="opt">اختياري</span></label><input id="commander"></div>
+  </div>
+  <div class="sep"></div>
+  <section id="patientFields">
+    <h2>بيانات تقرير المريض</h2>
+    <div class="grid">
+      <div><label>الاسم <span class="opt">اختياري</span></label><input id="pName"></div>
+      <div><label>السرية <span class="opt">اختياري</span></label><input id="pCompany"></div>
+      <div><label>الكتيبة <span class="opt">اختياري</span></label><input id="pBattalion"></div>
+      <div><label>اللواء <span class="opt">اختياري</span></label><input id="pBrigade"></div>
+      <div class="full"><label>ملاحظة <span class="opt">اختياري</span></label><input id="pNote"></div>
+      <div><label>اسم المستشفى <span class="opt">اختياري</span></label><input id="pHospital"></div>
+      <div><label>نوع المرض <span class="opt">اختياري</span></label><input id="pDisease"></div>
+      <div><label>تاريخ الدخول <span class="opt">اختياري</span></label><input id="pAdmission"></div>
+      <div><label>تاريخ الخروج <span class="opt">اختياري</span></label><input id="pDischarge"></div>
+      <div class="full"><label>شرح تفصيلي عن الحالة <span class="opt">اختياري</span></label><textarea id="pDescription"></textarea></div>
+    </div>
+  </section>
+  <section id="companionFields" class="hidden">
+    <h2>بيانات المرافق</h2>
+    <div class="grid">
+      <div><label>اسم المرافق <span class="opt">اختياري</span></label><input id="cName"></div>
+      <div><label>السرية <span class="opt">اختياري</span></label><input id="cCompany"></div>
+      <div><label>الكتيبة <span class="opt">اختياري</span></label><input id="cBattalion"></div>
+      <div><label>اللواء <span class="opt">اختياري</span></label><input id="cBrigade"></div>
+      <div class="full"><label>صلة القرابة <span class="opt">اختياري</span></label><input id="cRelation"></div>
+    </div>
+    <div class="sep"></div>
+    <h2>معلومات المريض</h2>
+    <div class="grid">
+      <div><label>اسم المريض <span class="opt">اختياري</span></label><input id="cpName"></div>
+      <div><label>المستشفى <span class="opt">اختياري</span></label><input id="cpHospital"></div>
+      <div><label>تاريخ الدخول <span class="opt">اختياري</span></label><input id="cpAdmission"></div>
+      <div><label>تاريخ الخروج <span class="opt">اختياري</span></label><input id="cpDischarge"></div>
+      <div class="full"><label>الشرح أو الطلب <span class="opt">اختياري</span></label><textarea id="cDescription"></textarea></div>
+    </div>
+  </section>
+  <div class="actions">
+    <button class="primary" id="createBtn" type="submit">إنشاء أو حفظ PDF</button>
+    <button class="whatsapp" id="whatsappBtn" type="button">إرسال التقرير عبر واتساب</button>
+    <button class="secondary" id="clearBtn" type="button">مسح التقرير الحالي</button>
+  </div>
+  <p class="help">زر واتساب يُنشئ ملف PDF ثم يفتح قائمة مشاركة الجهاز؛ اختر واتساب لإرسال الملف مباشرة. ويظل التقرير صفحة واحدة دون رابط الموقع أو رقم الصفحة.</p>
+  <div class="status">البيانات تُحفظ تلقائيًا على هذا الجهاز</div>
+</form>
+<section class="card">
+  <div class="preview-head"><h2>معاينة التقرير</h2><span>نفس الصورة التي تدخل ملف PDF</span></div>
+  <div class="preview-box"><canvas id="preview" class="preview-canvas" width="1241" height="1754"></canvas></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+const PAGE_W=595.3,PAGE_H=841.9,CANVAS_W=1241,CANVAS_H=1754;
+const SX=CANVAS_W/PAGE_W,SY=CANVAS_H/PAGE_H;
+let reportType=localStorage.getItem('mr2_type')||'patient';
+const canvas=document.getElementById('preview'),ctx=canvas.getContext('2d');
+const patientImg=new Image(),companionImg=new Image();
+patientImg.src='patient-template.png'; companionImg.src='companion-template.png';
+const commonIds=['reportDate','reportDay','commander'];
+const patientIds=['pName','pCompany','pBattalion','pBrigade','pNote','pHospital','pDisease','pAdmission','pDischarge','pDescription'];
+const companionIds=['cName','cCompany','cBattalion','cBrigade','cRelation','cpName','cpHospital','cpAdmission','cpDischarge','cDescription'];
+const $=id=>document.getElementById(id), val=id=>($(id)?.value||'').trim();
+const boxes={
+ date:[10.79746,793.3081,93.57799,818.5039], day:[10.79746,764.5129,93.57799,789.7087], commander:[122,647.5,345,666.2],
+ pName:[401.3056,546.0292,572.2654,569.0654], pCompany:[343.7192,546.0292,398.0664,569.0654], pBattalion:[280.0141,546.0292,341.5597,569.0654], pBrigade:[223.1475,546.0292,277.1348,569.0654], pNote:[37.79111,546.0292,219.5484,569.0654],
+ pHospital:[401.3056,468.2821,572.2654,491.3183], pDisease:[286.8525,468.2821,398.0664,491.3183], pAdmission:[172.7594,468.2821,284.3331,491.3183], pDischarge:[37.79111,468.2821,169.88,491.3183], pDescription:[39.59069,179.6101,572.2654,433.3679],
+ cName:[383.755,544.7871,557.8839,569.2665], cCompany:[327.1512,544.7871,382.7956,569.2665], cBattalion:[263.3519,544.7871,326.1918,569.2665], cBrigade:[206.748,544.7871,262.3925,569.2665], cRelation:[36.4567,544.7871,205.7886,569.2665],
+ cpName:[383.755,468.9489,557.8839,493.4283], cpHospital:[270.0676,468.9489,382.7956,493.4283], cpAdmission:[156.8599,468.9489,269.1082,493.4283], cpDischarge:[36.4567,468.9489,155.9005,493.4283], cDescription:[36.4567,126.717,557.8839,424.3099]
+};
+const basePt={date:15,day:15,commander:16,pName:13,pCompany:15,pBattalion:15,pBrigade:15,pNote:16,pHospital:16,pDisease:16,pAdmission:15,pDischarge:15,cName:13,cCompany:15,cBattalion:15,cBrigade:15,cRelation:15,cpName:13,cpHospital:15,cpAdmission:15,cpDischarge:15};
+const minPt={date:11,day:11,commander:13,pName:11,pCompany:11,pBattalion:11,pBrigade:11,pNote:11,pHospital:11,pDisease:11,pAdmission:11,pDischarge:11,cName:11,cCompany:11,cBattalion:11,cBrigade:11,cRelation:11,cpName:11,cpHospital:11,cpAdmission:11,cpDischarge:11};
+function pxBox(r){return {x:r[0]*SX,y:(PAGE_H-r[3])*SY,w:(r[2]-r[0])*SX,h:(r[3]-r[1])*SY}}
+function font(px){return `700 ${px}px Tahoma, Arial, sans-serif`}
+function drawSingle(text,key){
+ if(!text)return; const b=pxBox(boxes[key]); const pad=7; let size=basePt[key]*SY; const min=minPt[key]*SY;
+ ctx.save(); ctx.beginPath();ctx.rect(b.x+1,b.y+1,b.w-2,b.h-2);ctx.clip();ctx.direction=/[\u0600-\u06FF]/.test(text)?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#000';
+ ctx.font=font(size); let width=ctx.measureText(text).width,avail=b.w-pad*2;
+ while(width>avail&&size>min){size-=.75;ctx.font=font(size);width=ctx.measureText(text).width}
+ let squeeze=width>avail?Math.max(.72,avail/width):1;
+ ctx.translate(b.x+b.w/2,b.y+b.h/2+1);ctx.scale(squeeze,1);ctx.fillText(text,0,0);ctx.restore();
+}
+function splitLongWord(word,maxWidth){let out=[],part='';for(const ch of word){const t=part+ch;if(ctx.measureText(t).width<=maxWidth)part=t;else{if(part)out.push(part);part=ch}}if(part)out.push(part);return out}
+function wrap(text,maxWidth){
+ // نحول ضغطات Enter والمسافات المتعددة إلى مسافة واحدة، حتى يظهر الشرح
+ // كفقرة عربية متصلة ويملأ السطر قبل الانتقال إلى السطر التالي.
+ const clean=String(text||'')
+  .replace(/\r?\n+/g,' ')
+  .replace(/\s+/g,' ')
+  .trim();
+ if(!clean)return [];
+ const result=[],words=clean.split(' ');let line='';
+ for(const word of words){
+  const test=line?line+' '+word:word;
+  if(ctx.measureText(test).width<=maxWidth){line=test;continue}
+  if(line)result.push(line);
+  // لا نقسم الكلمات العربية إلى أحرف منفصلة؛ نبدأ بها سطرًا جديدًا.
+  line=word;
+ }
+ if(line)result.push(line);
+ return result;
+}
+function drawDescription(text,type){
+ if(!text)return;
+ const key=type==='patient'?'pDescription':'cDescription',b=pxBox(boxes[key]);
+ // نقطة بداية النص في المنطقة المسطرة. لا نربط كل سطر نصي بخط منقط مستقل،
+ // لأن ذلك كان يسبب تباعدًا كبيرًا عند إنشاء وفتح ملف PDF.
+ const startY=type==='patient'?904:917;
+ const bottomY=b.y+b.h-10;
+ let pt=16,lines=[],lineHeight=0,maxLines=0;const min=11.5;
+ ctx.save();ctx.direction='rtl';ctx.textAlign='right';ctx.textBaseline='alphabetic';ctx.fillStyle='#000';
+ while(pt>=min){
+  ctx.font=font(pt*SY);
+  lineHeight=Math.round(pt*SY*1.18);
+  maxLines=Math.max(1,Math.floor((bottomY-startY)/lineHeight)+1);
+  lines=wrap(text,b.w-22);
+  if(lines.length<=maxLines)break;
+  pt-=.5;
+ }
+ if(lines.length>maxLines){lines=lines.slice(0,maxLines);const last=lines.length-1;lines[last]=lines[last].replace(/[.…]*$/,'')+'…'}
+ ctx.beginPath();ctx.rect(b.x+2,b.y+2,b.w-4,b.h-4);ctx.clip();ctx.font=font(pt*SY);
+ const x=b.x+b.w-10;
+ for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],x,startY+i*lineHeight);
+ ctx.restore();
+}
+function drawReport(){
+ const img=reportType==='patient'?patientImg:companionImg;if(!img.complete||!img.naturalWidth)return;
+ ctx.clearRect(0,0,CANVAS_W,CANVAS_H);ctx.drawImage(img,0,0,CANVAS_W,CANVAS_H);
+ drawSingle(val('reportDate'),'date');drawSingle(val('reportDay'),'day');drawSingle(val('commander'),'commander');
+ if(reportType==='patient'){
+  ['pName','pCompany','pBattalion','pBrigade','pNote','pHospital','pDisease','pAdmission','pDischarge'].forEach(k=>drawSingle(val(k),k));drawDescription(val('pDescription'),'patient');
+ }else{
+  ['cName','cCompany','cBattalion','cBrigade','cRelation','cpName','cpHospital','cpAdmission','cpDischarge'].forEach(k=>drawSingle(val(k),k));drawDescription(val('cDescription'),'companion');
+ }
+}
+let raf=0;function scheduleDraw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(drawReport)}
+function setType(type){reportType=type;localStorage.setItem('mr2_type',type);$('patientBtn').classList.toggle('active',type==='patient');$('companionBtn').classList.toggle('active',type==='companion');$('patientFields').classList.toggle('hidden',type!=='patient');$('companionFields').classList.toggle('hidden',type!=='companion');scheduleDraw()}
+function key(){return reportType==='patient'?'mr2_patient':'mr2_companion'}
+function save(){const ids=reportType==='patient'?[...commonIds,...patientIds]:[...commonIds,...companionIds];const data={};ids.forEach(id=>data[id]=$(id).value);localStorage.setItem(key(),JSON.stringify(data))}
+function load(which){try{const data=JSON.parse(localStorage.getItem(which==='patient'?'mr2_patient':'mr2_companion')||'{}');Object.entries(data).forEach(([id,v])=>{if($(id))$(id).value=v})}catch(e){}}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
+function dataUrlBytes(url){const b64=url.split(',')[1],bin=atob(b64),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
+function enc(s){return new TextEncoder().encode(s)}
+function concat(parts){let n=parts.reduce((a,b)=>a+b.length,0),o=new Uint8Array(n),p=0;for(const a of parts){o.set(a,p);p+=a.length}return o}
+function pdfFromJpeg(jpeg,w,h){
+ const parts=[],offs=[0];let len=0;const add=a=>{parts.push(a);len+=a.length};const str=s=>add(enc(s));
+ str('%PDF-1.4\n');
+ const obj=(num,bodyParts)=>{offs[num]=len;str(`${num} 0 obj\n`);for(const p of bodyParts)add(typeof p==='string'?enc(p):p);str('\nendobj\n')};
+ obj(1,['<< /Type /Catalog /Pages 2 0 R >>']);
+ obj(2,['<< /Type /Pages /Kids [3 0 R] /Count 1 >>']);
+ obj(3,['<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.3 841.9] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>']);
+ obj(4,[`<< /Type /XObject /Subtype /Image /Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,jpeg,'\nendstream']);
+ const stream='q\n595.3 0 0 841.9 0 0 cm\n/Im0 Do\nQ\n';obj(5,[`<< /Length ${enc(stream).length} >>\nstream\n${stream}endstream`]);
+ const xref=len;str('xref\n0 6\n0000000000 65535 f \n');for(let i=1;i<=5;i++)str(String(offs[i]).padStart(10,'0')+' 00000 n \n');str(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);return concat(parts)
+}
+async function generatePdfBlob(){drawReport();const jpeg=dataUrlBytes(canvas.toDataURL('image/jpeg',.94));const bytes=pdfFromJpeg(jpeg,CANVAS_W,CANVAS_H);return new Blob([bytes],{type:'application/pdf'})}
+function reportFileName(){return reportType==='patient'?'تقرير مريض.pdf':'تقرير مرافق مريض.pdf'}
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
+async function buildReportFile(){save();drawReport();const blob=await generatePdfBlob(),name=reportFileName();return {blob,name,file:new File([blob],name,{type:'application/pdf'})}}
+async function createAndShare(){
+ const btn=$('createBtn');btn.disabled=true;btn.textContent='جارٍ إنشاء PDF…';
+ try{
+  const {blob,name,file}=await buildReportFile();
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name})}
+  else{downloadBlob(blob,name);toast('تم إنشاء وحفظ ملف PDF')}
+ }catch(e){if(e?.name!=='AbortError'){console.error(e);toast('تعذر إنشاء الملف، أعد المحاولة')}}
+ finally{btn.disabled=false;btn.textContent='إنشاء أو حفظ PDF'}
+}
+async function shareWhatsApp(){
+ const btn=$('whatsappBtn');btn.disabled=true;btn.textContent='جارٍ تجهيز التقرير…';
+ try{
+  const {blob,name,file}=await buildReportFile();
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   toast('اختر واتساب من قائمة المشاركة');
+   await navigator.share({files:[file],title:name,text:'تقرير الدائرة الطبية'});
+  }else{
+   downloadBlob(blob,name);
+   toast('تم حفظ PDF؛ أرفقه داخل واتساب');
+   setTimeout(()=>{location.href='https://wa.me/?text='+encodeURIComponent('تم تجهيز تقرير الدائرة الطبية بصيغة PDF. أرفق الملف المحفوظ في هذه المحادثة.')},700);
+  }
+ }catch(e){if(e?.name!=='AbortError'){console.error(e);toast('تعذر فتح المشاركة، أعد المحاولة')}}
+ finally{btn.disabled=false;btn.textContent='إرسال التقرير عبر واتساب'}
+}
+$('patientBtn').addEventListener('click',()=>setType('patient'));$('companionBtn').addEventListener('click',()=>setType('companion'));
+$('reportForm').addEventListener('submit',e=>{e.preventDefault();createAndShare()});
+$('whatsappBtn').addEventListener('click',shareWhatsApp);
+$('clearBtn').addEventListener('click',()=>{if(!confirm('مسح بيانات التقرير الحالي؟'))return;const ids=reportType==='patient'?[...commonIds,...patientIds]:[...commonIds,...companionIds];ids.forEach(id=>$(id).value='');localStorage.removeItem(key());scheduleDraw()});
+[...commonIds,...patientIds,...companionIds].forEach(id=>$(id).addEventListener('input',()=>{save();scheduleDraw()}));
+patientImg.onload=scheduleDraw;companionImg.onload=scheduleDraw;load('patient');load('companion');setType(reportType);
+window.__testPdfBase64=async()=>{const b=await generatePdfBlob();return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(b)})};
+</script>
+<script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});</script>
+</body>
+</html>
